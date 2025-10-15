@@ -1,0 +1,20 @@
+services:
+  app:
+    image: raw_data_loader_image:latest
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./secret/.env
+
+    volumes:
+      - ./secret/key-file.json:/secret/key-file.json
+    
+    environment:
+      - DB_SCHEMA=public
+      - TABLE_NAME=customers
+      - CURSOR_COLUMN=created_at
+      - CHUNK_SIZE=100
+      - GOOGLE_APPLICATION_CREDENTIALS=/secret/key-file.json
