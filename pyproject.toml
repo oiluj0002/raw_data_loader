@@ -1,0 +1,15 @@
+[project]
+name = "raw_data_loader"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "oiluj0002", email = "juliogabriel.pe@gmail.com"},
+]
+dependencies = ["pyarrow>=21.0.0", "pandas>=2.3.3", "sqlalchemy>=2.0.44", "google-cloud-storage>=3.4.1", "google-cloud-bigquery>=3.38.0", "python-dotenv>=1.1.1", "psycopg[binary,pool]"]
+requires-python = "==3.13.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
