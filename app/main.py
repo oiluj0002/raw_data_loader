@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from config.env import get_env_var
 
 import pandas as pd
@@ -13,8 +13,13 @@ url = f"postgresql+psycopg://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}"
 query = "SELECT * FROM customers"
 
 engine = create_engine(url)
+inspector = inspect(engine)
 
-with engine.connect() as conn:
-    df = pd.read_sql(query, engine, chunksize=100)
+#with engine.connect() as conn:
+#    df = pd.read_sql(query, engine, chunksize=100)
 
-print(df)
+columns = {}
+for col in inspector.get_columns("customers"):
+    columns[col["name"]] = str(col["type"])
+
+print(columns)
