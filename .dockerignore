@@ -8,6 +8,7 @@ __pycache__/
 dist/
 build/
 *.egg
+
 # Virtual environments
 .venv/
 venv/
@@ -18,20 +19,25 @@ target/
 dbt_packages/
 logs/
 *.log
+
 # Git
 .git/
 .gitignore
+
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
 # OS
 .DS_Store
 Thumbs.db
+
 # Documentation
 docs/
+
 # Outros
 *.md
 !README.md
