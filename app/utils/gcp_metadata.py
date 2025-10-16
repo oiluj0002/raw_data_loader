@@ -7,9 +7,9 @@ from config import env
 logger = get_logger()
 
 
-class CloudMetadataHelper:
+class GCSMetadataManager:
     """
-    A helper class to fetch and manage metadata for a data job from GCS.
+    A class to fetch and manage metadata for a data job from GCS.
 
     This class handles interactions with GCS to retrieve the last processed
     cursor value and the saved table schema, which are essential for
@@ -18,7 +18,7 @@ class CloudMetadataHelper:
 
     def __init__(self, storage_client: storage.Client) -> None:
         """
-        Initializes the MetadataHelper for a specific table.
+        Initializes the GCSMetadataManager for a specific table.
 
         Args:
             storage_client: An authenticated GCS storage client instance.

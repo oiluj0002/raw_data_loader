@@ -18,7 +18,9 @@ class GCSParquetLoader:
     """
 
     def __init__(
-        self, storage_client: storage.Client, pyarrow_schema: pa.Schema
+        self,
+        storage_client: storage.Client,
+        pyarrow_schema: pa.Schema,
     ) -> None:
         """
         Initializes the Loader.
@@ -36,7 +38,7 @@ class GCSParquetLoader:
         try:
             df = df.filter(items=self.pyarrow_schema.names)
             table = pa.Table.from_pandas(
-                df, schema=self.pyarrow_schema, preserve_index=False, safe=False
+                df, schema=self.pyarrow_schema, preserve_index=False, safe=True
             )
 
             now = datetime.now(timezone.utc)
@@ -51,7 +53,6 @@ class GCSParquetLoader:
             buffer = io.BytesIO()
             pq.write_table(table, buffer)
             buffer.seek(0)
-
             blob.upload_from_file(buffer, content_type="application/parquet")
 
             logger.info(

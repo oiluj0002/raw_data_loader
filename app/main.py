@@ -1,22 +1,42 @@
 import sys
 
-from utils.logger import get_logger
-from utils.metadata import CloudMetadataHelper
-from utils.validation import build_pyarrow_schema
+from config import env
 
 from core.db import get_db_engine
 from core.gcp import get_storage_client
-from core.schema import get_current_db_schema
 
-from config import env
+from utils.gcp_metadata import GCSMetadataManager
+from utils.schema import (
+    build_pyarrow_schema,
+    get_current_db_schema,
+    validate_current_schema,
+)
+from utils.logger import get_logger
 
-from controller.destination import GCSParquetLoader
-from controller.source import PostgreSQLExtractor
+from controller.loader import GCSParquetLoader
+from controller.transformer import Transformer
+from controller.extractor import PostgreSQLExtractor
 
 logger = get_logger()
 
 
 def main():
+    """
+    Main entry point for the incremental ETL application.
+
+    This script orchestrates the process of extracting new or updated data from a
+    PostgreSQL table, converting it to Parquet format, and loading it into a
+    partitioned structure in Google Cloud Storage.
+
+    The main workflow is as follows:
+    1. Initialize connections to the database (PostgreSQL) and GCS.
+    2. Manage schema: Fetches the current schema from the database and
+       compares it with a saved reference schema in GCS to handle drift.
+    3. Extract data in chunks using a cursor for incremental loads.
+    4. Transforms data using basic business rules.
+    5. Load each chunk into GCS as a Parquet file.
+    6. Update the cursor value in GCS upon successful completion.
+    """
     logger.info("ETL application starting...")
 
     max_cursor_in_run = None
@@ -24,27 +44,44 @@ def main():
     chunk_count = 0
 
     try:
+        # Initialization of instances
         engine = get_db_engine()
         storage_client = get_storage_client()
-        metadata = CloudMetadataHelper(storage_client)
+        metadata_manager = GCSMetadataManager(storage_client)
 
+        # Fetch schemas
+        reference_schema = metadata_manager.get_reference_schema()
         current_schema = get_current_db_schema(engine)
-        metadata.save_reference_schema(current_schema)
 
-        pyarrow_schema = build_pyarrow_schema(current_schema)
+        # Save reference schema if not exists
+        if reference_schema is None:
+            metadata_manager.save_reference_schema(current_schema)
+            reference_schema = current_schema
 
-        extractor = PostgreSQLExtractor(engine)
+        # Validate schema for Schema Drift detection
+        schema_drift_info = validate_current_schema(reference_schema, current_schema)
+
+        # Build pyarrow schema
+        pyarrow_schema = build_pyarrow_schema(reference_schema)
+
+        # I/O process
+        extractor = PostgreSQLExtractor(engine, schema_drift_info.columns_to_select)
+        transformer = Transformer(pyarrow_schema, schema_drift_info.deleted_columns)
         loader = GCSParquetLoader(storage_client, pyarrow_schema)
 
-        last_cursor = metadata.get_last_cursor_value()
-
+        # Iterate in chunks
+        last_cursor = metadata_manager.get_last_cursor_value()
         for i, chunk in extractor.extract_chunks(last_cursor):
-            loader.load_chunk(chunk, i)
+            transformed_chunk = transformer.transform_chunk(chunk)
+            loader.load_chunk(transformed_chunk, i)
 
             chunk_count += i
             total_rows += len(chunk)
-            current_max = chunk[env.CURSOR_COLUMN].max()
+            current_max = chunk[
+                env.CURSOR_COLUMN
+            ].max()  # preserves max original [ns] timestamp type
 
+            # Updates cursor
             if max_cursor_in_run is None or current_max > max_cursor_in_run:
                 max_cursor_in_run = current_max
 
@@ -52,8 +89,9 @@ def main():
             f"Extraction-load loop finished. Processed {total_rows} rows in {chunk_count} chunks."
         )
 
+        # Saves cursor if cursor is altered in data batch
         if max_cursor_in_run is not None:
-            metadata.update_cursor_value(str(max_cursor_in_run))
+            metadata_manager.update_cursor_value(str(max_cursor_in_run))
         else:
             logger.info("No new data was processed in this run.")
 

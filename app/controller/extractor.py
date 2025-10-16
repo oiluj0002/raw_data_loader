@@ -17,15 +17,16 @@ class PostgreSQLExtractor:
     without loading the entire dataset into memory.
     """
 
-    def __init__(self, engine: Engine) -> None:
+    def __init__(self, engine: Engine, columns_to_select: list[str]) -> None:
         """
         Initializes the PostgreSQLExtractor.
 
         Args:
             engine: An authenticated SQLAlchemy engine instance for the PostgreSQL database.
+            columns_to_select: List of columns to use in select query.
         """
         self.engine = engine
-
+        self.columns_to_select = columns_to_select
         self.schema_name = env.DB_SCHEMA
         self.table_name = env.TABLE_NAME
         self.cursor_column = env.CURSOR_COLUMN
@@ -44,8 +45,10 @@ class PostgreSQLExtractor:
         Returns:
             A string containing the complete SQL query.
         """
+        columns = ", ".join(f'"{c}"' for c in self.columns_to_select)
+
         query = f"""
-            SELECT *
+            SELECT {columns}
             FROM {self.schema_name}.{self.table_name}
             WHERE {self.cursor_column} > '{last_cursor}'
             ORDER BY {self.cursor_column} ASC
