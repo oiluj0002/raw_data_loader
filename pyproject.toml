@@ -1,0 +1,28 @@
+[project]
+name = "raw_data_loader"
+version = "0.1.0"
+description = "SQL raw data loader"
+authors = [
+    {name = "juliodeodato0002", email = "juliodeodato@apostaganha.bet"},
+]
+dependencies = [
+    "pandas>=2.3.3",
+    "sqlalchemy>=2.0.44",
+    "google-cloud-storage>=3.4.1",
+    "google-cloud-bigquery>=3.38.0",
+    "pyodbc>=5.2.0",
+    "pyarrow>=21.0.0",
+    "cryptography>=46.0.3",
+]
+requires-python = "==3.13.*"
+readme = "README.md"
+
+[dependency-groups]
+dev = [
+    "pyarrow-stubs>=20.0.0.20250928",
+    "pyright>=1.1.406",
+    "pytest>=8.4.2",
+    "pytest-mock>=3.15.1",
+    "python-dotenv>=1.1.1",
+    "ruff>=0.14.0",
+]

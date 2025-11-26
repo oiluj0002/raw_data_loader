@@ -1,0 +1,18 @@
+services:
+  app:
+    image: mssql-ag-dev:latest
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    env_file:
+      - ./secret/.env
+
+    volumes:
+      - ./secret/key-file.json:/secret/key-file.json
+
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/secret/key-file.json
+      - EXECUTION_TS=1900-01-01 00:00:00.000000
+      - CLOUD_RUN_TASK_INDEX=0

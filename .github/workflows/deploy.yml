@@ -1,0 +1,63 @@
+name: Deploy Raw Data Loader to Cloud Run Jobs
+
+on:
+    push:
+        branches: [main]
+        paths:
+          - 'app/**'
+          - 'Dockerfile'
+          - 'pyproject.toml'
+          - 'uv.lock'
+          - '.github/workflows/deploy.yml'
+
+concurrency:
+  group: raw-data-loader-deploy
+  cancel-in-progress: true
+
+jobs:
+    deploy:
+        runs-on: [self-hosted, github-runner-dados]
+
+        steps:
+            - name: Check out repo
+              uses: actions/checkout@v4
+
+            - name: GCP authentication
+              uses: google-github-actions/auth@v2
+              with:
+                credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+            
+            - name: Configure Docker
+              run: |
+                gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+
+            - name: Build docker image
+              run: |
+                docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REPO_NAME }}/${{ secrets.GCP_IMAGE_NAME }}:${{ secrets.GCP_IMAGE_TAG_NAME }} .
+
+            - name: Push to Artifact Registry
+              run: |
+                docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REPO_NAME }}/${{ secrets.GCP_IMAGE_NAME }}:${{ secrets.GCP_IMAGE_TAG_NAME }}
+            
+            - name: Deploy on Cloud Run Jobs (create or update)
+              run: |
+                gcloud run jobs deploy etl-job-mssql-ag \
+                --image=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REPO_NAME }}/${{ secrets.GCP_IMAGE_NAME }}:${{ secrets.GCP_IMAGE_TAG_NAME }} \
+                --region=${{ secrets.GCP_REGION }} \
+                --project=${{ secrets.GCP_PROJECT_ID }} \
+                --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }} \
+                --vpc-egress=all-traffic \
+                --network=${{ secrets.GCP_NETWORK }} \
+                --subnet=${{ secrets.GCP_SUBNETWORK }} \
+                --memory=16Gi \
+                --cpu=4 \
+                --max-retries=3 \
+                --task-timeout=24h \
+                --set-secrets=DB_USER=DB_MSSQL_USERNAME:latest \
+                --set-secrets=DB_PASSWORD=DB_MSSQL_PASSWORD:latest \
+                --set-secrets=DB_HOST=DB_MSSQL_HOST:latest \
+                --set-secrets=DB_PORT=DB_MSSQL_PORT:latest \
+                --set-secrets=DB_NAME=DB_MSSQL_DATABASE_NAME:latest \
+                --set-secrets=GCP_PROJECT_ID=GCP_PROJECT_ID:latest \
+                --set-secrets=GCS_BUCKET_NAME=GCS_BUCKET_NAME:latest \
+                --set-secrets=SECRET_FERNET_KEY=DB_MSSQL_FERNET_KEY:latest

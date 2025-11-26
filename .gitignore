@@ -1,0 +1,126 @@
+###############################################
+# Python bytecode and caches
+###############################################
+__pycache__/
+*.py[cod]
+*$py.class
+
+###############################################
+# Virtual environments
+###############################################
+.venv/
+venv/
+env/
+ENV/
+.python-version
+pip-wheel-metadata/
+pip-log.txt
+
+###############################################
+# Distribution / packaging artifacts
+###############################################
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+.wheels/
+sdist/
+pip-wheel-metadata/
+
+###############################################
+# Unit test and coverage outputs
+###############################################
+.pytest_cache/
+.coverage
+.coverage.*
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+###############################################
+# Type checker / static analysis caches
+###############################################
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.pyright/
+.pylint.d/
+.ruff_cache/
+
+###############################################
+# Jupyter notebooks
+###############################################
+.ipynb_checkpoints/
+
+###############################################
+# Logs and runtime files
+###############################################
+logs/
+*.log
+*.pid
+*.out
+*.err
+
+###############################################
+# Editor and IDE settings
+###############################################
+.vscode/
+.idea/
+*.code-workspace
+
+###############################################
+# OS-specific files
+###############################################
+.DS_Store
+Thumbs.db
+
+###############################################
+# Environment and local config
+###############################################
+.env
+.env.*
+!.env.example
+.envrc
+*.local
+
+###############################################
+# Python packaging helpers
+###############################################
+.pdm-python
+__pypackages__/
+
+###############################################
+# Docker (local overrides and artifacts)
+###############################################
+docker-compose.override.yml
+.docker/
+.docker.env
+.docker-local/
+
+###############################################
+# Project-specific: secrets and credentials
+# Avoid committing real credentials. Keep example manifest tracked.
+###############################################
+secret/*.json
+!secret/manifest_example.json
+secret/*.yml
+secret/*.yaml
+secret/*.env
+secret/*.ini
+
+# Legacy root-level secrets (prefer using secret/ folder)
+key-file.json
+
+###############################################
+# Deployment scripts (local variants)
+###############################################
+deploy.sh
